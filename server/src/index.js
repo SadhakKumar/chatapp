@@ -4,6 +4,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import connectDB from './service/databaseService.js';
 
+const messages = [];
 const app = express();
 
 app.use(cors({
@@ -20,6 +21,16 @@ app.get("/", (req, res) => {
 })
 
 io.on('connection', (socket) => {
+  const username = socket.handshake.query.username;
+  socket.on('message', (data) => {
+    const message = {
+      message: data.message,
+      username: username,
+      sentAt: Date.now()
+    }
+    messages.push(message);
+    socket.emit('message', message);  
+  });
   console.log('a user connected');
 });
 
