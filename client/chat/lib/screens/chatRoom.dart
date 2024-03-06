@@ -1,11 +1,11 @@
-import 'dart:html';
-
+import 'dart:io';
 import 'package:chat/providers/chatting.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chat/providers/user.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
-
+// import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter_io_socket/flutter_io_socket.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart';
 import '../model/message.dart';
 
 class chatRoom extends StatefulWidget {
@@ -16,37 +16,49 @@ class chatRoom extends StatefulWidget {
 }
 
 class _chatRoomState extends State<chatRoom> {
-  late IO.Socket _socket;
+  late IO.Socket socket;
   final TextEditingController _messageInputController = TextEditingController();
 
   _sendMessage() {
-    _socket.emit('message', {
-      "message": _messageInputController.text,
-      "sender": Provider.of<UserProvider>(context, listen: false).username
+    socket.emit('message', {
+      'message': _messageInputController.text.trim(),
+      'sender': Provider.of<UserProvider>(context, listen: false).username,
     });
     _messageInputController.clear();
   }
 
-  connectScoket() {
-    _socket.onConnect((data) {
-      print("Connected");
-    });
+  // _connectSocket() {
+  //   socket.onConnect((data) => print('Connection established'));
+  //   _socket.onConnectError((data) => print('Connect Error: $data'));
+  //   _socket.onDisconnect((data) => print('Socket.IO server disconnected'));
+  //   _socket.on(
+  //     'message',
+  //     (data) => Provider.of<ChatProvider>(context, listen: false).addMessage(
+  //       Message.fromJson(data),
+  //     ),
+  //   );
+  // }
 
-    _socket.onConnectError((data) => print("error$data"));
+  Future<void> initSocket() async {
+    try {
+      socket = IO.io("http://10.0.2.2:3000", <String, dynamic>{
+        'transports': ['websocket'],
+        'forceNew': true,
+      });
+      socket.connect();
 
-    _socket.onDisconnect((data) => print("disconnected $data"));
+      socket.onConnect((data) => print('connected'));
+      socket.onDisconnect((data) => print('disconnected'));
+      socket.onConnectError((data) => print('Connect Error: $data'));
+    } catch (e) {
+      print('error $e');
+    }
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-
-    _socket = IO.io(
-        "http://localhost:3000",
-        IO.OptionBuilder().setTransports(['websocket']).setQuery({
-          "username": Provider.of<UserProvider>(context, listen: false).username
-        }).build());
+    initSocket();
   }
 
   @override
@@ -138,5 +150,10 @@ class _chatRoomState extends State<chatRoom> {
             ));
       },
     );
+  }
+
+  void dispose() {
+    socket.disconnect();
+    super.dispose();
   }
 }

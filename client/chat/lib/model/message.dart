@@ -13,10 +13,11 @@ class Message {
     };
   }
 
-  Message.fromMap(Map<String, dynamic> map) {
-    message = map['message'];
-    sender = map['sender'];
-    receiver = map['receiver'];
-    time = map['time'];
+  factory Message.fromJson(Map<String, dynamic> message) {
+    return Message(
+      message: message['message'],
+      sender: message['sender'],
+      time: DateTime.fromMillisecondsSinceEpoch(message['time']).toString(),
+    );
   }
 }

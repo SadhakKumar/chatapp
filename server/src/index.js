@@ -1,40 +1,27 @@
-import express from 'express';
-import cors from 'cors';
-import http from 'http';
-import { Server } from 'socket.io';
-import connectDB from './service/databaseService.js';
+import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
-const messages = [];
+
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer);
 
-app.use(cors({
-  origin: "*",
-  credentials: true
-
-}));
-
-const server = http.createServer(app);
-const io = new Server(server);
-
-app.get("/", (req, res) => {
-  res.send("hello");
-})
 
 io.on('connection', (socket) => {
-  const username = socket.handshake.query.username;
-  socket.on('message', (data) => {
-    const message = {
-      message: data.message,
-      username: username,
-      sentAt: Date.now()
-    }
-    messages.push(message);
-    socket.emit('message', message);  
+  console.log('A user connected', socket.id);
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
   });
-  console.log('a user connected');
+
+  socket.on('message', (data) => {
+    console.log('Message received:', data);
+    io.emit('message', data); // Broadcast the message to all clients
+  });
 });
 
-server.listen(3000, () => {
-  connectDB();
-  console.log('listening on *:3000');
+const PORT = 3000;
+httpServer.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
