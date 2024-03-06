@@ -1,11 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:chat/providers/chatting.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chat/providers/user.dart';
 // import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:flutter_io_socket/flutter_io_socket.dart' as IO;
-import 'package:socket_io_client/socket_io_client.dart';
+// import 'package:flutter_io_socket/flutter_io_socket.dart' as IO;
+import 'package:web_socket_channel/io.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import '../model/message.dart';
 
 class chatRoom extends StatefulWidget {
@@ -16,49 +18,38 @@ class chatRoom extends StatefulWidget {
 }
 
 class _chatRoomState extends State<chatRoom> {
-  late IO.Socket socket;
   final TextEditingController _messageInputController = TextEditingController();
+  late IOWebSocketChannel channel;
 
-  _sendMessage() {
-    socket.emit('message', {
-      'message': _messageInputController.text.trim(),
-      'sender': Provider.of<UserProvider>(context, listen: false).username,
-    });
+  void _sendMessage() {
+    final username = Provider.of<UserProvider>(context, listen: false).username;
+    final message = _messageInputController.text;
+    String data = "{'message': '$message','sender': '$username'}";
+    channel.sink.add(data);
     _messageInputController.clear();
   }
 
-  // _connectSocket() {
-  //   socket.onConnect((data) => print('Connection established'));
-  //   _socket.onConnectError((data) => print('Connect Error: $data'));
-  //   _socket.onDisconnect((data) => print('Socket.IO server disconnected'));
-  //   _socket.on(
-  //     'message',
-  //     (data) => Provider.of<ChatProvider>(context, listen: false).addMessage(
-  //       Message.fromJson(data),
-  //     ),
-  //   );
-  // }
-
-  Future<void> initSocket() async {
+  void connectToServer() {
     try {
-      socket = IO.io("http://10.0.2.2:3000", <String, dynamic>{
-        'transports': ['websocket'],
-        'forceNew': true,
+      channel = IOWebSocketChannel.connect(
+          'ws://192.168.107.1:5556/${Provider.of<UserProvider>(context, listen: false).username}');
+      channel.stream.listen((message) {
+        print(message);
+        message = message.replaceAll(RegExp("'"), '"');
+        var jsonData = json.decode(message);
+        final msg = Message.fromJson(jsonData);
+        Provider.of<ChatProvider>(context, listen: false).addMessage(msg);
+        setState(() {});
       });
-      socket.connect();
-
-      socket.onConnect((data) => print('connected'));
-      socket.onDisconnect((data) => print('disconnected'));
-      socket.onConnectError((data) => print('Connect Error: $data'));
     } catch (e) {
-      print('error $e');
+      print(e);
     }
   }
 
   @override
   void initState() {
     super.initState();
-    initSocket();
+    connectToServer();
   }
 
   @override
@@ -153,7 +144,7 @@ class _chatRoomState extends State<chatRoom> {
   }
 
   void dispose() {
-    socket.disconnect();
+    channel.sink.close();
     super.dispose();
   }
 }

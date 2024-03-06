@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:chat/providers/user.dart';
 import 'package:chat/screens/chatRoom.dart';
 import 'package:chat/providers/chatting.dart';
+import 'package:web_socket_channel/io.dart';
 
 class onBoarding extends StatefulWidget {
   const onBoarding({super.key});
@@ -23,7 +24,7 @@ class _onBoardingState extends State<onBoarding> {
           MaterialPageRoute(
               builder: (context) => ChangeNotifierProvider(
                     create: (context) => ChatProvider(),
-                    child: const chatRoom(),
+                    child: chatRoom(),
                   )));
     } else {
       showDialog(
