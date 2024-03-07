@@ -22,8 +22,6 @@ class _chatRoomState extends State<chatRoom> {
   final TextEditingController _messageInputController = TextEditingController();
   late IOWebSocketChannel channel;
 
-  get http => null;
-
   void _sendMessage() {
     final username = Provider.of<UserProvider>(context, listen: false).username;
     final message = _messageInputController.text;

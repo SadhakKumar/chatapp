@@ -19,8 +19,9 @@ function handleWebSocketDisconnection(username) {
   console.log('User Disconnected: ' + username);
 }
 
-module.exports = {
-  handleWebSocketConnection,
-  handleWebSocketMessage,
-  handleWebSocketDisconnection,
-};
+export{
+    handleWebSocketConnection,
+    handleWebSocketMessage,
+    handleWebSocketDisconnection,
+    };
+

@@ -1,7 +1,5 @@
 // controllers/messageController.js
-const Message = require('../models/message');
-
-
+import Message from '../models/message.js';
 
 const getMessages = async(req, res) => {
     try{
@@ -25,8 +23,8 @@ async function saveMessage(sender, message) {
   await newMessage.save();
 }
 
-module.exports = {
-  getMessages,
-  saveMessage,
-  getMsg
-};
+export{
+    getMessages,
+    saveMessage,
+    getMsg
+}
