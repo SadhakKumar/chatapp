@@ -1,9 +1,19 @@
+import 'package:chat/api/firebase_api.dart';
 import 'package:chat/providers/user.dart';
 import 'package:chat/screens/onBoarding.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'api/firebase_api.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await FirebaseApi().initialize();
   runApp(const MyApp());
 }
 

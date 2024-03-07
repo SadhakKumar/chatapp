@@ -38,6 +38,9 @@ dependencies:
   socket_io_client: ^2.0.3+1
   flutter_io_socket: ^0.0.7
   web_socket_channel: ^2.4.4
+  http: ^1.2.1
+  firebase_core: ^2.24.2
+  firebase_messaging: ^14.7.10
 
 dev_dependencies:
   flutter_test:

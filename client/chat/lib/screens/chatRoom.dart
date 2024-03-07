@@ -9,6 +9,7 @@ import 'package:chat/providers/user.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../model/message.dart';
+import 'package:http/http.dart' as http;
 
 class chatRoom extends StatefulWidget {
   const chatRoom({super.key});
@@ -21,6 +22,8 @@ class _chatRoomState extends State<chatRoom> {
   final TextEditingController _messageInputController = TextEditingController();
   late IOWebSocketChannel channel;
 
+  get http => null;
+
   void _sendMessage() {
     final username = Provider.of<UserProvider>(context, listen: false).username;
     final message = _messageInputController.text;
@@ -32,13 +35,25 @@ class _chatRoomState extends State<chatRoom> {
   void connectToServer() {
     try {
       channel = IOWebSocketChannel.connect(
-          'ws://192.168.107.1:5556/${Provider.of<UserProvider>(context, listen: false).username}');
+          'wss://pt234q3x-5556.inc1.devtunnels.ms/${Provider.of<UserProvider>(context, listen: false).username}');
       channel.stream.listen((message) {
-        print(message);
         message = message.replaceAll(RegExp("'"), '"');
         var jsonData = json.decode(message);
-        final msg = Message.fromJson(jsonData);
-        Provider.of<ChatProvider>(context, listen: false).addMessage(msg);
+        if (jsonData is List) {
+          final List<dynamic> messagesData = json.decode(message);
+          final List<Message> messages =
+              messagesData.map((data) => Message.fromJson(data)).toList();
+
+          ChatProvider chatProvider =
+              Provider.of<ChatProvider>(context, listen: false);
+          messages.forEach((message) {
+            chatProvider.addMessage(message);
+          });
+        } else {
+          final msg = Message.fromJson(jsonData);
+          Provider.of<ChatProvider>(context, listen: false).addMessage(msg);
+        }
+
         setState(() {});
       });
     } catch (e) {
