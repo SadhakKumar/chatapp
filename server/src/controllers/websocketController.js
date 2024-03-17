@@ -1,7 +1,7 @@
 // controllers/websocketController.js
 const webSockets = {};
 
-function handleWebSocketConnection(ws, req) {
+function handleWebSocketConnection(socket) {
   const username = req.url.split('/')[1];
   console.log(username + ' connected');
   webSockets[username] = ws;

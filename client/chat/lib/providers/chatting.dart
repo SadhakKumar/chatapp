@@ -6,6 +6,11 @@ class ChatProvider extends ChangeNotifier {
 
   List<Message> get messages => _messages;
 
+  void setMessages(List<Message> messages) {
+    _messages.addAll(messages);
+    notifyListeners();
+  }
+
   void addMessage(Message message) {
     _messages.add(message);
     notifyListeners();

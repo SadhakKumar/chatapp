@@ -1,5 +1,6 @@
 // Imports
 import express from 'express';
+const app = express();
 import cors from 'cors';
 import {WebSocketServer } from 'ws';
 import connectDB from './service/databaseService.js';
@@ -7,6 +8,11 @@ import { handleWebSocketConnection, handleWebSocketMessage, handleWebSocketDisco
 import { getMessages, saveMessage, getMsg } from './controllers/messageController.js';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { sendNotification } from './utils/notification.js';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+const server = createServer(app);
+
+const io = new Server(server);
 
 // Firebase admin setup
 initializeApp({
@@ -15,7 +21,7 @@ initializeApp({
 });
 
 // App Configuration
-const app = express();
+
 app.use(cors(
   {
     origin: '*',
@@ -27,8 +33,45 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get('/messages', getMessages);
 
+
+io.on('connection', async (socket) => {
+  console.log('a user connected', socket.handshake.query.username);
+
+  // Handle WebSocket-like behavior
+  // handleWebSocketConnection(socket);
+
+  // Send existing messages to the newly connected client
+  const messages = await getMsg();
+  socket.emit('message', messages);
+
+  // Handle incoming messages
+  socket.on('message', async (message) => {
+    console.log('Message received from client:', message);
+    io.emit('message', message);
+
+    // Perform any additional logic, such as sending notifications or saving messages to the database
+    const { sender, message: msg } = message;
+    if (sender === "sadhak") {
+      sendNotification(sadhak, msg);
+    } else {
+      sendNotification(sadhak, msg);
+    }
+    
+    // Store message in MongoDB
+    await saveMessage(sender, msg);
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log('user disconnected'+ socket.handshake.query.username);
+    // handleWebSocketDisconnection(socket.username);
+  });
+});
+
+
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   connectDB();
   console.log(`Server running on port ${PORT}`);
 });
@@ -39,37 +82,37 @@ const sadhak1 = "fMHfSO9lQ8-Kf3fZq2AIr9:APA91bGW7tKXhFugZJMcNzfD5Jd65Kg7H8P8hg3H
 
 
 // Sockets Configuration
-const wss = new WebSocketServer({ port: 5556 });
+// const wss = new WebSocketServer({ port: 5556 });
 
-wss.on('connection', async (ws, req) => {
-  handleWebSocketConnection(ws, req);
+// wss.on('connection', async (ws, req) => {
+//   handleWebSocketConnection(ws, req);
 
-  const messages = await getMsg();
-  ws.send(JSON.stringify(messages));
+//   const messages = await getMsg();
+//   ws.send(JSON.stringify(messages));
 
-  ws.on('message', async message => {
-    console.log(message.toString());
+//   ws.on('message', async message => {
+//     console.log(message.toString());
 
-    handleWebSocketMessage(message);
+//     handleWebSocketMessage(message);
 
-    var dataString = message.toString();
-    dataString = dataString.replace(/\'/g, '"');
-    var data = JSON.parse(dataString);
+//     var dataString = message.toString();
+//     dataString = dataString.replace(/\'/g, '"');
+//     var data = JSON.parse(dataString);
 
-    console.log('Message received from client: ' + data.message);
-    if(data.sender === "sadhak"){
-      sendNotification(sadhak1,data.message)
-    }else{
-      sendNotification(sadhak,data.message)
-    }
+//     console.log('Message received from client: ' + data.message);
+//     if(data.sender === "sadhak"){
+//       sendNotification(sadhak1,data.message)
+//     }else{
+//       sendNotification(sadhak,data.message)
+//     }
     
-    // Store message in MongoDB
-    await saveMessage(data.sender, data.message);
-  });
+//     // Store message in MongoDB
+//     await saveMessage(data.sender, data.message);
+//   });
 
-  ws.on('close', function () {
-    const username = req.url.split('/')[1];
-    handleWebSocketDisconnection(username);
-  });
-});
+//   ws.on('close', function () {
+//     const username = req.url.split('/')[1];
+//     handleWebSocketDisconnection(username);
+//   });
+// });
 
